@@ -1,7 +1,6 @@
 import "./App.css";
 import { InputForm } from "./components/InputForm/InputForm";
 import { ResponseCards } from "./components/ResponseCards/ResponseCards";
-import { ThemeProvider } from "./components/ThemeProvider";
 
 // 1. Define your form.
 
