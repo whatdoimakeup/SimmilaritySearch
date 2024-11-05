@@ -26,7 +26,7 @@ class FormStore {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/search",
+        "https://api.meiiiok.ru/api/search",
         formData,
         {
           headers: {

@@ -62,6 +62,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = [
     'http://test.local',
     'http://localhost:5173',
+    'https://app.meiiiok.ru',
 ]
 ROOT_URLCONF = 'project.urls'
 
@@ -94,7 +95,7 @@ DATABASES = {
         'USER': 'django-admin',
         'PASSWORD': 'admin',
         'HOST': '127.0.0.1',
-        'PORT': 5432
+        'PORT': 5433
     }
 }
 
