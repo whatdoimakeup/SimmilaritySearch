@@ -59,11 +59,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 CORS_ALLOW_CREDENTIALS = True
-
+CSRF_TRUSTED_ORIGINS = [
+       'https://api.meiiiok.ru',
+       'https://app.meiiiok.ru',
+   ]
 CORS_ORIGIN_WHITELIST = [
     'http://test.local',
     'http://localhost:5173',
+    'https://api.meiiiok.ru',
     'https://app.meiiiok.ru',
+    
 ]
 ALLOWED_HOSTS = ['*']
 ROOT_URLCONF = 'project.urls'
@@ -86,11 +91,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
-AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9000'
+# AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9000'
 AWS_ACCESS_KEY_ID = 'NPmsPabsLqlQHGXYrab8'
 AWS_SECRET_ACCESS_KEY = '1FTehjF1a9QSTt1aTdC5lrdjw8ixIuiMki7cheip'
 AWS_STORAGE_BUCKET_NAME = 'images'
 DEFAULT_FILE_STORAGE = 'project.storage.MediaStorage'
+# AWS_S3_CUSTOM_DOMAIN = f'storage.meiiiok.ru'
+AWS_S3_ENDPOINT_URL = 'https://storage.meiiiok.ru'
+AWS_QUERYSTRING_AUTH = True
 AWS_QUERYSTRING_EXPIRE = 300
 
 # Database

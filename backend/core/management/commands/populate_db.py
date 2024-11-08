@@ -41,7 +41,7 @@ class Command(BaseCommand):
         collection = client.collections.get("Images")
         
         all_files = []
-        for dirpath, dirnames, filenames in os.walk(r"C:\Users\Misha\Downloads\train_dataset_train_data_rkn\train_data_rkn\dataset"):
+        for dirpath, dirnames, filenames in os.walk("/home/user1/SimmilaritySearch/dataset"):
             # print(dirpath, dirnames, filenames)
             for filename in filenames:
                 if os.path.isfile(Path(dirpath ,filename)):
@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 }
                 uuid = batch.add_object(properties=weaviate_obj)
                 with open(img, 'rb') as f:
-                    file = File(f, name=str(img).split('\\')[-1])
-                    Test.objects.create(name=img, weaviate_id=uuid, file=file, cluster=str(img).split('\\')[-2])
-        print(f'Populated database with {len(os.listdir("../test_images"))} images in {time.time() - start} seconds')
+                    file = File(f, name=str(img).split('/')[-1])
+                    Test.objects.create(name=img, weaviate_id=uuid, file=file, cluster=str(img).split('/')[-2])
+        print(f'Populated database with {len(all_files)} images in {time.time() - start} seconds')
         client.close()

@@ -15,6 +15,7 @@ interface ResponseCardProps {
 
 export const ResponseCard: React.FC<ResponseCardProps> = observer(
   ({ simmilarImage }) => {
+    
     return (
       <Card>
         <CardHeader>

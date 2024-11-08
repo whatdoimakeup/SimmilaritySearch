@@ -25,15 +25,15 @@ services:
   multi2vec-clip:
     image: cr.weaviate.io/semitechnologies/multi2vec-clip:xlm-roberta-base-ViT-B-32-laion5b_s13b_b90k
     environment:
-      ENABLE_CUDA: "0"
-    #   NVIDIA_VISIBLE_DEVICES: all
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+      ENABLE_CUDA: "1"
+      NVIDIA_VISIBLE_DEVICES: all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
   postgres:
     image: postgres:14
     environment:

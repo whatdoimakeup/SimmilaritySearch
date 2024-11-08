@@ -4,3 +4,5 @@ node_modules
 postgres_data
 weaviate_data
 minio_data
+dataset.zip
+dataset

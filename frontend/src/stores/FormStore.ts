@@ -19,7 +19,8 @@ class FormStore {
   }
 
   get uploadedImage() {
-    if (!this.images) return null;
+    if (!this.images || !this.images[0]) return null;
+    
     return URL.createObjectURL(this.images[0]);
   }
 
@@ -30,7 +31,7 @@ class FormStore {
 
     try {
       const response: AxiosResponse = yield axios.post(
-        "http://localhost:8000/api/search",
+        "https://api.meiiiok.ru/api/search",
         formData,
         {
           headers: {
