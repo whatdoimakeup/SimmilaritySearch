@@ -27,7 +27,6 @@ export const InputForm: React.FC = observer(() => {
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
     formStore.submit(values);
   }
   const imageRef = form.register("image");
@@ -64,7 +63,9 @@ export const InputForm: React.FC = observer(() => {
               </FormItem>
             )}
           />
-          <Button type="submit">Find simmilar images</Button>
+          <Button disabled={formStore.isLoading} type="submit">
+            {formStore.isLoading ? "Searching..." : "Find simmilar images"}
+          </Button>
         </form>
       </Form>
     </div>

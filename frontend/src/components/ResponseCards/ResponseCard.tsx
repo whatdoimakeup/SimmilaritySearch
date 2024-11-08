@@ -23,12 +23,20 @@ export const ResponseCard: React.FC<ResponseCardProps> = observer(
           </CardTitle>
           <CardDescription>
             {`Certainty: ${simmilarImage.certainty.toFixed(4)}`}
+            {` Cluster: ${simmilarImage.cluster}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div style={{ width: "400px", height: "400px", borderRadius: "8px" }}>
+          <div
+            style={{
+              width: "40vw",
+              minWidth: "300px",
+              height: "fit-content",
+              borderRadius: "8px",
+            }}
+          >
             <img
-              src={`data:image/png;base64,${simmilarImage.image}`}
+              src={simmilarImage.image}
               style={{
                 width: "100%",
                 height: "100%",

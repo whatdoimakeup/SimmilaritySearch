@@ -4,13 +4,21 @@ import React from "react";
 
 export const SelectedImage: React.FC = observer(() => {
   return (
-    <div style={{ width: "400px", height: "400px" }}>
+    <div
+      style={{
+        display: "flex",
+        maxWidth: "400px",
+        maxHeight: "400px",
+        alignItems: "center",
+      }}
+    >
       {formStore.uploadedImage && (
         <img
           src={formStore.uploadedImage}
           style={{
             width: "100%",
             height: "100%",
+            maxHeight: "400px",
             objectFit: "contain",
             borderRadius: "8px",
           }}

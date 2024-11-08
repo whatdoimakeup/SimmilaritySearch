@@ -1,5 +1,5 @@
 from django.urls import path
-from core.views import FindSimmilar
+from core.views import FindSimmilar, GetUrl
 
 urlpatterns = [
     path('search', FindSimmilar.as_view(), name='find_simmilar'),

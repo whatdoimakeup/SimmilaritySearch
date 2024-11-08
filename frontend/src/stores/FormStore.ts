@@ -1,14 +1,17 @@
-import { makeAutoObservable } from "mobx";
+import { flow, makeAutoObservable } from "mobx";
 // import { z } from "zod";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { z } from "zod";
 import { formSchema } from "@/components/schemas/formSchema";
 import { ISimmilarImage } from "@/types/SimmilarImage";
 class FormStore {
   images: FileList | null = null;
   response: ISimmilarImage[] = [];
+  isLoading = false;
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      submit: flow,
+    });
   }
 
   setImage(image: FileList | null) {
@@ -20,13 +23,14 @@ class FormStore {
     return URL.createObjectURL(this.images[0]);
   }
 
-  async submit(values: z.infer<typeof formSchema>) {
+  *submit(values: z.infer<typeof formSchema>) {
+    this.isLoading = true;
     const formData = new FormData();
     formData.append("image", values.image[0]);
 
     try {
-      const response = await axios.post(
-        "https://api.meiiiok.ru/api/search",
+      const response: AxiosResponse = yield axios.post(
+        "http://localhost:8000/api/search",
         formData,
         {
           headers: {
@@ -36,9 +40,10 @@ class FormStore {
       );
 
       this.response = response.data;
-      console.log(response.data);
     } catch (error) {
       console.error("There was an error uploading the image!", error);
+    } finally {
+      this.isLoading = false;
     }
   }
 }

@@ -26,7 +26,7 @@ services:
     image: cr.weaviate.io/semitechnologies/multi2vec-clip:xlm-roberta-base-ViT-B-32-laion5b_s13b_b90k
     environment:
       ENABLE_CUDA: "0"
-      # NVIDIA_VISIBLE_DEVICES: all
+    #   NVIDIA_VISIBLE_DEVICES: all
     # deploy:
     #   resources:
     #     reservations:
@@ -43,3 +43,11 @@ services:
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
       - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql
+  minio:
+    image: minio/minio
+    command: minio server --console-address ":9001" /data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - ./minio_data:/data

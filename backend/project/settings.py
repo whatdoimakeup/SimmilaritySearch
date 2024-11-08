@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'core',
     'rest_framework',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:5173',
     'https://app.meiiiok.ru',
 ]
+ALLOWED_HOSTS = ['*']
 ROOT_URLCONF = 'project.urls'
 
 TEMPLATES = [
@@ -84,6 +86,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
+AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9000'
+AWS_ACCESS_KEY_ID = 'NPmsPabsLqlQHGXYrab8'
+AWS_SECRET_ACCESS_KEY = '1FTehjF1a9QSTt1aTdC5lrdjw8ixIuiMki7cheip'
+AWS_STORAGE_BUCKET_NAME = 'images'
+DEFAULT_FILE_STORAGE = 'project.storage.MediaStorage'
+AWS_QUERYSTRING_EXPIRE = 300
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

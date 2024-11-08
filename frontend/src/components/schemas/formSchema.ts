@@ -1,4 +1,4 @@
-const MAX_UPLOAD_SIZE = 1024 * 1024 * 3; // 3MB
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 10; // 3MB
 
 import { z } from "zod";
 export const formSchema = z.object({
