@@ -19,10 +19,11 @@ class FindSimmilar(APIView):
         )
         response = []
         ids = [img.uuid for img in result.objects]
-        objects = Test.objects.filter(weaviate_id__in=ids).only('file', 'weaviate_id', 'cluster')
+        objects = Test.objects.filter(weaviate_id__in=ids).only('file', 'weaviate_id', 'cluster', 'name')
         objects_map = {obj.weaviate_id: obj for obj in objects}
         for img in result.objects:
             obj = {}
+            obj['name'] = objects_map[img.uuid].name
             obj['cluster'] = objects_map[img.uuid].cluster
             obj['image'] = objects_map[img.uuid].file.url
             obj['distance'] = img.metadata.distance

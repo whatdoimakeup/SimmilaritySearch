@@ -19,6 +19,8 @@ class Command(BaseCommand):
         client = weaviate.connect_to_local()
         print('connected. Deleting all collections...')
         client.collections.delete_all()
+        print(f'Postgres has {Test.objects.count()} records. DELETING ALL')
+        Test.objects.all().delete()
         print('deleted. Creating new collection...')
         client.collections.create(
             "Images",
@@ -57,6 +59,6 @@ class Command(BaseCommand):
                 uuid = batch.add_object(properties=weaviate_obj)
                 with open(img, 'rb') as f:
                     file = File(f, name=str(img).split('/')[-1])
-                    Test.objects.create(name=img, weaviate_id=uuid, file=file, cluster=str(img).split('/')[-2])
+                    Test.objects.create(name=str(img).split('/')[-1], weaviate_id=uuid, file=file, cluster=str(img).split('/')[-2])
         print(f'Populated database with {len(all_files)} images in {time.time() - start} seconds')
         client.close()
