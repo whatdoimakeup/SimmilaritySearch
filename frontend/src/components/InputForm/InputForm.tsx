@@ -18,7 +18,6 @@ import { formStore } from "@/stores/FormStore";
 import { SelectedImage } from "./SelectedImage";
 
 import { formSchema } from "../schemas/formSchema";
-// 1. Define your form.
 
 export const InputForm: React.FC = observer(() => {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -36,6 +35,7 @@ export const InputForm: React.FC = observer(() => {
       style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
     >
       <SelectedImage />
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField

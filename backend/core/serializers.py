@@ -4,6 +4,7 @@ import io
 
 class ImageUploadSerializer(serializers.Serializer):
     image = serializers.ImageField()  # Используем ImageField для проверки
+    save = serializers.BooleanField(default=False)
 
     def validate_file(self, value):
         # Проверка, является ли файл изображением

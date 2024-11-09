@@ -15,9 +15,14 @@ interface ResponseCardProps {
 
 export const ResponseCard: React.FC<ResponseCardProps> = observer(
   ({ simmilarImage }) => {
-    
     return (
-      <Card>
+      <Card
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <CardHeader>
           <CardTitle>
             {`Distance: ${simmilarImage.distance.toFixed(4)}`}
@@ -31,7 +36,7 @@ export const ResponseCard: React.FC<ResponseCardProps> = observer(
           <div
             style={{
               width: "40vw",
-              minWidth: "300px",
+              // minWidth: "200px",
               height: "fit-content",
               borderRadius: "8px",
             }}

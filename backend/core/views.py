@@ -8,9 +8,7 @@ from rest_framework import status
 import base64
 class FindSimmilar(APIView):
     def post(self, request):
-        data = request.data
         serializer = ImageUploadSerializer(data=request.data)
-        
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
        
@@ -29,12 +27,20 @@ class FindSimmilar(APIView):
         objects_map = {obj.weaviate_id: obj for obj in objects}
         for img in result.objects:
             obj = {}
-            obj['name'] = objects_map[img.uuid].name
-            obj['cluster'] = objects_map[img.uuid].cluster
-            obj['image'] = objects_map[img.uuid].file.url
+            object = objects_map.get(img.uuid)
+            obj['name'] = object.name if object else 'Unknown'
+            obj['cluster'] = object.cluster if object else 'Unknown'
+            obj['image'] = object.file.url if object else 'Unknown'
             obj['distance'] = img.metadata.distance
             obj['certainty'] = img.metadata.certainty
             response.append(obj)
+
+        if serializer.validated_data.get('save'):
+            uuid = collection.data.insert(
+                properties={
+                "image": base64_image
+            })
+            Test.objects.create(weaviate_id=uuid, file=image_file, cluster='user_uploaded', name=image_file)
 
         return Response(response, status=200)
 
