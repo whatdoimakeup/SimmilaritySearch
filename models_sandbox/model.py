@@ -29,6 +29,25 @@ class ModelWrapper:
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.model.eval()
         self.__is_train = False
+    
+    def __call__(self, images, texts):
+        """
+        Обрабатывает изображения и тексты, возвращая их эмбеддинги.
+
+        Параметры:
+            images: Список или батч изображений.
+            texts: Список или батч текстов.
+
+        Возвращает:
+            torch.Tensor: Тензор, содержащий результат работы.
+        """
+        # Обрабатываем изображения и тексты одновременно через процессор
+        inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True).to(self.device)
+        
+        # Получаем эмбеддинги из модели
+        outputs = self.model(**inputs)
+        
+        return outputs
 
     def train(self):
         """
@@ -136,12 +155,13 @@ class ModelWrapper:
     
 
 class Trainer:
-    def __init__(self, model_wrapper, train_dataloader, val_dataloader, lr=1e-5):
+    def __init__(self, model_wrapper, train_dataloader, val_dataloader, optimizer):
         self.model_wrapper = model_wrapper
+        self.model_wrapper.model.to(torch.float32)
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
-        self.optimizer = Adam(self.model_wrapper.model.parameters(), lr=lr)
-        self.loss_fn = CrossEntropyLoss()
+        self.optimizer = optimizer
+        self.loss_fn = ContrastiveLoss()
         self.train_losses = []
         self.val_losses = []
 
@@ -149,17 +169,12 @@ class Trainer:
         self.model_wrapper.train()
         epoch_loss = 0
         for batch_images, batch_labels in tqdm(self.train_dataloader, desc="Training"):
-            batch_images = batch_images.to(self.model_wrapper.device)
-            batch_labels = batch_labels.to(self.model_wrapper.device)
-            
-            # Получаем фичи изображений и текстовые фичи классов
-            image_features = self.model_wrapper.encode_image(batch_images)
-            class_texts = [f"Image of {label}" for label in batch_labels.cpu().numpy()]
-            text_features = self.model_wrapper.encode_text(class_texts).detach()
 
-            # Считаем логиты и лосс
-            logits = torch.matmul(image_features, text_features.T)
-            loss = self.loss_fn(logits, torch.arange(len(batch_labels), device=self.model_wrapper.device))
+            output = self.model_wrapper(batch_images, batch_labels)
+            logits_per_image, logits_per_text = output.logits_per_image, output.logits_per_text
+            # Получаем фичи изображений и текстовые фичи классов
+
+            loss = self.loss_fn(logits_per_image, logits_per_text)
             epoch_loss += loss.item()
 
             # Обновляем параметры
@@ -176,17 +191,12 @@ class Trainer:
         epoch_loss = 0
         with torch.no_grad():
             for batch_images, batch_labels in tqdm(self.val_dataloader, desc="Validating"):
-                batch_images = batch_images.to(self.model_wrapper.device)
-                batch_labels = batch_labels.to(self.model_wrapper.device)
                 
                 # Получаем фичи изображений и текстовые фичи классов
-                image_features = self.model_wrapper.encode_image(batch_images)
-                class_texts = [f"Class {label}" for label in batch_labels.cpu().numpy()]
-                text_features = self.model_wrapper.encode_text(class_texts).detach()
+                output = self.model_wrapper(batch_images, batch_labels)
+                logits_per_image, logits_per_text = output.logits_per_image, output.logits_per_text
 
-                # Считаем логиты и лосс
-                logits = torch.matmul(image_features, text_features.T)
-                loss = self.loss_fn(logits, torch.arange(len(batch_labels), device=self.model_wrapper.device))
+                loss = self.loss_fn(logits_per_image, logits_per_text)
                 epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(self.val_dataloader)
@@ -252,8 +262,6 @@ class ImageDataset(Dataset):
         self.image_paths = image_paths
         self.transform = transform
         self.labels = [self._get_label_from_path(path) for path in image_paths]
-        self.label_to_idx = {label: idx for idx, label in enumerate(set(self.labels))}
-        self.idx_to_label = {idx: label for label, idx in self.label_to_idx.items()}
 
     def _get_label_from_path(self, path):
         """
@@ -284,15 +292,14 @@ class ImageDataset(Dataset):
             idx (int): Индекс изображения.
 
         Возвращает:
-            tuple: Кортеж, содержащий изображение (после преобразования) и индекс метки.
+            tuple: Кортеж, содержащий изображение (после преобразования) и метку.
         """
         image_path = self.image_paths[idx]
         label = self.labels[idx]
-        label_idx = self.label_to_idx[label]
-        
+        text = f"Image of {label}"
         image = Image.open(image_path).convert("RGB")
         
         if self.transform:
             image = self.transform(image)
 
-        return image, label_idx
+        return image, text
