@@ -7,3 +7,4 @@ minio_data
 dataset.zip
 dataset
 custom_model
+.ipynb_checkpoints

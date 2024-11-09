@@ -58,12 +58,6 @@ class FindSimmilar(APIView):
 
         return Response(response, status=200)
 
-class GetUrl(APIView):
-    def get(self, request):
-        test = Test.objects.last()
-        return Response(test.file.url, status=200)
-
-
 
 def cut_box(byte_img: bytes) -> bytes:
         nparr = np.frombuffer(byte_img, np.uint8)
