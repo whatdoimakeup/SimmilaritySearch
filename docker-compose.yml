@@ -1,5 +1,6 @@
 services:
   weaviate:
+    container_name: weaviate
     command:
       - --host
       - 0.0.0.0
@@ -22,7 +23,14 @@ services:
       DEFAULT_VECTORIZER_MODULE: "multi2vec-clip"
       ENABLE_MODULES: "multi2vec-clip"
       CLUSTER_HOSTNAME: "node1"
+    healthcheck:
+      test: wget --no-verbose --tries=3 --spider http://localhost:8080/v1/.well-known/ready || exit 1
+      interval: 10s
+      retries: 10
+      start_period: 30s
+      timeout: 10s
   multi2vec-clip:
+    container_name: multi2vec-clip
     image: cr.weaviate.io/semitechnologies/multi2vec-clip:xlm-roberta-base-ViT-B-32-laion5b_s13b_b90k
     environment:
       ENABLE_CUDA: "1"
@@ -35,6 +43,7 @@ services:
               count: all
               capabilities: [gpu]
   postgres:
+    container_name: postgres
     image: postgres:14
     environment:
       POSTGRES_PASSWORD: "postgres"
@@ -43,6 +52,12 @@ services:
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
       - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U 'django-admin' -d 'hakaton_db'"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
   minio:
     image: minio/minio
     command: minio server --console-address ":9001" /data
@@ -51,3 +66,19 @@ services:
       - 9001:9001
     volumes:
       - ./minio_data:/data
+  django:
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+      weaviate:
+        condition: service_healthy
+        restart: true
+      
+    container_name: django
+    build:
+      context: ./backend
+    ports:
+      - 8000:8000
+    command: python manage.py runserver 0.0.0.0:8000
+    

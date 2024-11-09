@@ -28,7 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-VDB = weaviate.connect_to_local()
+VDB = weaviate.connect_to_local('weaviate')
 
 collection = VDB.collections.get('Images')
 
@@ -93,13 +93,13 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 30000
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
-AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9000'
+AWS_S3_ENDPOINT_URL = 'http://minio:9000'
 AWS_ACCESS_KEY_ID = 'NPmsPabsLqlQHGXYrab8'
 AWS_SECRET_ACCESS_KEY = '1FTehjF1a9QSTt1aTdC5lrdjw8ixIuiMki7cheip'
 AWS_STORAGE_BUCKET_NAME = 'images'
 DEFAULT_FILE_STORAGE = 'project.storage.MediaStorage'
 
-# AWS_S3_ENDPOINT_URL = 'https://storage.meiiiok.ru'
+AWS_S3_ENDPOINT_URL = 'https://storage.meiiiok.ru'
 AWS_QUERYSTRING_AUTH = True
 AWS_QUERYSTRING_EXPIRE = 3000
 
@@ -112,8 +112,8 @@ DATABASES = {
         'NAME': 'hakaton_db',
         'USER': 'django-admin',
         'PASSWORD': 'admin',
-        'HOST': '127.0.0.1',
-        'PORT': 5433
+        'HOST': 'postgres',
+        'PORT': 5432
     }
 }
 

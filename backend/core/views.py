@@ -2,13 +2,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from weaviate.classes.query import MetadataQuery
 from project.settings import collection
+from core.serializers import ImageUploadSerializer
 from core.models import Test
+from rest_framework import status
 import base64
 class FindSimmilar(APIView):
     def post(self, request):
         data = request.data
-        # print(data.get('image'))
-        image_file = data.get('image')
+        serializer = ImageUploadSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+       
+        image_file = serializer.validated_data.get('image')
         image_data = image_file.read()
         base64_image = base64.b64encode(image_data).decode('utf-8')
         result = collection.query.near_image(
