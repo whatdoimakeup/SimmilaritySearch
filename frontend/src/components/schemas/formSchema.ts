@@ -1,4 +1,4 @@
-const MAX_UPLOAD_SIZE = 1024 * 1024 * 10; // 3MB
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 50; // 3MB
 
 import { z } from "zod";
 export const formSchema = z.object({
@@ -9,5 +9,5 @@ export const formSchema = z.object({
     }, "File is required")
     .refine((file) => {
       return !file.length || file[0].size <= MAX_UPLOAD_SIZE;
-    }, "File size must be less than 3MB"),
+    }, "File size must be less than 50MB"),
 });

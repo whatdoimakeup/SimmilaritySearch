@@ -6,3 +6,4 @@ weaviate_data
 minio_data
 dataset.zip
 dataset
+custom_model
