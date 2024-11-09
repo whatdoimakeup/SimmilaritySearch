@@ -27,6 +27,7 @@ SECRET_KEY = 'django-insecure-2(2$pt!9elru#111@6$xa_^#2=5=yu02h!%xdzn4mmt(53u!=$
 DEBUG = True
 
 ALLOWED_HOSTS = []
+# VDB = weaviate.connect_to_local() #FOR LOCAL
 
 VDB = weaviate.connect_to_local('weaviate')
 
@@ -111,8 +112,10 @@ DATABASES = {
         'NAME': 'hakaton_db',
         'USER': 'django-admin',
         'PASSWORD': 'admin',
+        # 'HOST': '127.0.0.1', # FOR LOCAL
         'HOST': 'postgres',
-        'PORT': 5432
+        # 'PORT': 5433, #FOR LOCAL
+        'PORT': 5432,
     }
 }
 
