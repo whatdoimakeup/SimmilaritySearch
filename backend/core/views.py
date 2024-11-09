@@ -8,6 +8,7 @@ from rest_framework import status
 import base64
 import cv2
 import numpy as np
+from django.core.files.base import ContentFile
 
 
 class FindSimmilar(APIView):
@@ -15,11 +16,12 @@ class FindSimmilar(APIView):
         serializer = ImageUploadSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-       
+        print(serializer.validated_data)
         image_file = serializer.validated_data.get('image')
         image_data = image_file.read()
 
         img_cutted = cut_box(image_data)
+
     
 
         base64_image = base64.b64encode(img_cutted).decode('utf-8')
@@ -51,7 +53,8 @@ class FindSimmilar(APIView):
                 properties={
                 "image": base64_image
             })
-            Test.objects.create(weaviate_id=uuid, file=image_file, cluster='user_uploaded', name=image_file)
+            new_file = ContentFile(img_cutted, name=image_file.name)
+            Test.objects.create(weaviate_id=uuid, file=new_file, cluster='user_uploaded', name=image_file)
 
         return Response(response, status=200)
 
