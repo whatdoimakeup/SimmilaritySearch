@@ -30,7 +30,7 @@ class ModelWrapper:
         self.model.eval()
         self.__is_train = False
     
-    def __call__(self, images, texts):
+    def __call__(self, images, texts, do_rescale = False):
         """
         Обрабатывает изображения и тексты, возвращая их эмбеддинги.
 
@@ -42,7 +42,7 @@ class ModelWrapper:
             torch.Tensor: Тензор, содержащий результат работы.
         """
         # Обрабатываем изображения и тексты одновременно через процессор
-        inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True).to(self.device)
+        inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True, do_rescale=do_rescale).to(self.device)
         
         # Получаем эмбеддинги из модели
         outputs = self.model(**inputs)
@@ -153,26 +153,71 @@ class ModelWrapper:
     
         return similarity_matrix
     
+from sklearn.metrics import f1_score, accuracy_score
+def calculate_metrics(logits, ground_truth):
+    """
+    Считает метрики: точность, f1.
+    """
+    preds = torch.argmax(logits, dim=1)
+    acc = accuracy_score(ground_truth.cpu(), preds.cpu())
+    f1 = f1_score(ground_truth.cpu(), preds.cpu(), average='weighted')
+    return acc, f1    
 
 class Trainer:
-    def __init__(self, model_wrapper, train_dataloader, val_dataloader, optimizer):
+    def __init__(self, model_wrapper, train_dataloader, val_dataloader, optimizer, scheduler = None):
+        """
+        Класс Trainer отвечает за управление процессом обучения модели, в том числе за обучение, валидацию и 
+        настройку параметров обучения с использованием оптимизатора и планировщика.
+
+        Атрибуты:
+            model_wrapper: Оболочка модели, включающая модель, оптимизацию и метрики.
+            train_dataloader: DataLoader для обучения, предоставляющий данные для тренировки.
+            val_dataloader: DataLoader для валидации, предоставляющий данные для оценки.
+            optimizer: Оптимизатор, используемый для обновления весов модели.
+            scheduler: Планировщик, управляющий изменением скорости обучения (необязательный параметр).
+            loss_fn: Функция потерь, используемая для обучения (по умолчанию ContrastiveLoss).
+            train_losses: Список для хранения значений потерь на обучающем наборе на протяжении обучения.
+            val_losses: Список для хранения значений потерь на валидационном наборе на протяжении обучения.
+            f1_train: Список значений F1-метрики для каждого этапа обучения.
+            acc_train: Список значений точности для каждого этапа обучения.
+            f1_val: Список значений F1-метрики для каждого этапа валидации.
+            acc_val: Список значений точности для каждого этапа валидации.
+        """
         self.model_wrapper = model_wrapper
         self.model_wrapper.model.to(torch.float32)
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.loss_fn = ContrastiveLoss()
         self.train_losses = []
         self.val_losses = []
+        self.f1_train = []
+        self.acc_train = []
+        self.f1_val = []
+        self.acc_val = []
 
     def train_epoch(self):
+        """
+        Выполняет один полный цикл обучения модели на тренировочном наборе данных.
+
+        Returns:
+            avg_loss (float): Среднее значение функции потерь по всем батчам за текущую эпоху.
+        """
         self.model_wrapper.train()
         epoch_loss = 0
+        epoch_f1 = 0
+        epoch_acc = 0
         for batch_images, batch_labels in tqdm(self.train_dataloader, desc="Training"):
 
             output = self.model_wrapper(batch_images, batch_labels)
             logits_per_image, logits_per_text = output.logits_per_image, output.logits_per_text
             # Получаем фичи изображений и текстовые фичи классов
+            current_batch_size = batch_images.size(0)
+            ground_truth = torch.arange(current_batch_size, device=self.model_wrapper.device)
+            acc, f1 = calculate_metrics(logits_per_image, ground_truth)
+            epoch_acc += acc
+            epoch_f1 += f1
 
             loss = self.loss_fn(logits_per_image, logits_per_text)
             epoch_loss += loss.item()
@@ -183,12 +228,24 @@ class Trainer:
             self.optimizer.step()
         
         avg_loss = epoch_loss / len(self.train_dataloader)
+        avg_f1 = epoch_f1 / len(self.train_dataloader)
+        avg_acc = epoch_acc / len(self.train_dataloader)
         self.train_losses.append(avg_loss)
+        self.f1_train.append(avg_f1)
+        self.acc_train.append(avg_acc)
         return avg_loss
 
     def val_epoch(self):
+        """
+        Выполняет один полный цикл валидации модели на валидационном наборе данных.
+
+        Returns:
+            avg_loss (float): Среднее значение функции потерь по всем батчам на валидационном наборе за текущую эпоху.
+        """
         self.model_wrapper.eval()
         epoch_loss = 0
+        epoch_f1 = 0
+        epoch_acc = 0
         with torch.no_grad():
             for batch_images, batch_labels in tqdm(self.val_dataloader, desc="Validating"):
                 
@@ -196,20 +253,52 @@ class Trainer:
                 output = self.model_wrapper(batch_images, batch_labels)
                 logits_per_image, logits_per_text = output.logits_per_image, output.logits_per_text
 
+                current_batch_size = batch_images.size(0)
+                ground_truth = torch.arange(current_batch_size, device=self.model_wrapper.device)
+                acc, f1 = calculate_metrics(logits_per_image, ground_truth)
+                epoch_acc += acc
+                epoch_f1 += f1
+
                 loss = self.loss_fn(logits_per_image, logits_per_text)
                 epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(self.val_dataloader)
+        avg_f1 = epoch_f1 / len(self.val_dataloader)
+        avg_acc = epoch_acc / len(self.val_dataloader)
         self.val_losses.append(avg_loss)
+        self.f1_val.append(avg_f1)
+        self.acc_val.append(avg_acc)
         return avg_loss
 
     def fit(self, epochs):
+        """
+        Запускает процесс обучения и валидации модели на протяжении заданного количества эпох.
+
+        Параметры:
+            epochs (int): Количество эпох, на протяжении которых будет производиться обучение модели.
+
+        Описание:
+            - Выполняет обучение и валидацию на каждой эпохе.
+            - Сохраняет потери и метрики для каждой эпохи.
+            - Опционально использует планировщик (scheduler) для корректировки learning rate после каждой эпохи.
+        """
         for epoch in range(epochs):
             train_loss = self.train_epoch()
             val_loss = self.val_epoch()
+
+            if self.scheduler is not None:
+                self.scheduler.step()
+
             print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+            if (epoch + 1) % 3 == 0 or epoch == epochs - 1:
+                model_path = f"./clip_ft_{epoch+1}"
+                self.model_wrapper.model.save_pretrained(model_path)
+                self.model_wrapper.processor.save_pretrained(model_path)
 
     def plot_losses(self):
+        """ 
+        Отрисовка графиков функций потерь.
+        """
         plt.figure(figsize=(10, 5))
         plt.plot(self.train_losses, label="Train Loss")
         plt.plot(self.val_losses, label="Validation Loss")
@@ -217,6 +306,32 @@ class Trainer:
         plt.ylabel("Loss")
         plt.legend()
         plt.title("Training and Validation Loss over Epochs")
+        plt.show()
+
+    def plot_f1(self):
+        """ 
+        Отрисовка графиков метрики f1.
+        """
+        plt.figure(figsize=(10, 5))
+        plt.plot(self.f1_train, label="Train f1")
+        plt.plot(self.f1_val, label="Validation f1")
+        plt.xlabel("Epochs")
+        plt.ylabel("F1")
+        plt.legend()
+        plt.title("Training and Validation f1 over Epochs")
+        plt.show()
+
+    def plot_acc(self):
+        """ 
+        Отрисовка графиков точности.
+        """
+        plt.figure(figsize=(10, 5))
+        plt.plot(self.acc_train, label="Train accuracy")
+        plt.plot(self.acc_val, label="Validation accuracy")
+        plt.xlabel("Epochs")
+        plt.ylabel("Accuracy")
+        plt.legend()
+        plt.title("Training and Validation accuracy over Epochs")
         plt.show()
 
 
@@ -251,7 +366,7 @@ class ContrastiveLoss(nn.Module):
     
 
 class ImageDataset(Dataset):
-    def __init__(self, image_paths, transform=None):
+    def __init__(self, image_paths, transform=None, is_train = True):
         """
         Инициализирует датасет с изображениями и метками, основанными на названии папки.
 
@@ -262,6 +377,7 @@ class ImageDataset(Dataset):
         self.image_paths = image_paths
         self.transform = transform
         self.labels = [self._get_label_from_path(path) for path in image_paths]
+        self._is_train = is_train
 
     def _get_label_from_path(self, path):
         """
@@ -301,5 +417,6 @@ class ImageDataset(Dataset):
         
         if self.transform:
             image = self.transform(image)
-
+        if self._is_train:
+            return image, image_path
         return image, text
